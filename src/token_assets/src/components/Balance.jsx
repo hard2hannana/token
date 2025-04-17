@@ -1,18 +1,32 @@
 import React, { useState } from "react";
-import { Principle } from '@dfinity/principle';
+import { Principal } from '@dfinity/principal';
 import { token } from "../../../declarations/token"
 
 function Balance() {
   
   const [inputValue, setInputVAlue] = useState("");
-  const [balanceResult, setBalance] = useState("")
+  const [balanceResult, setBalance] = useState("");
+  const [cryptoSymbol, setSymbol] = useState("");
+  const [isHidden ,setHidden] = useState(true);
 
   async function handleClick() {
-    console.log(inputValue);
-    const principle = Principle.fromText(inputValue);
-    let balance = await token.balanceOf(principle);
-    setBalance(balance.toLocaleString);
+    try {
+      const principal = Principal.fromText(inputValue);
+      const rawBalance = await token.balanceOf(principal);
+      setSymbol(await token.getSymbol());
+      setHidden(false);
+  
+      // If it's not already a BigInt, convert it
+      const balance = typeof rawBalance === "bigint" ? rawBalance : BigInt(rawBalance);
+  
+      // Format safely
+      setBalance(balance.toLocaleString());
+    } catch (err) {
+      console.error("Failed to get balance:", err);
+      setBalance("Error fetching balance");
+    }
   }
+  
 
 
   return (
@@ -35,7 +49,7 @@ function Balance() {
           Check Balance
         </button>
       </p>
-      <p>This account has a balance of {balanceResult}.</p>
+      <p hidden={isHidden}>This account has a balance of {balanceResult} {cryptoSymbol} .</p>
     </div>
   );
 }
